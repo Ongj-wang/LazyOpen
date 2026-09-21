@@ -59,6 +59,16 @@ python main.py -add --name welding2 --dir "E:\addon_dev\jaka_welding_kit2" --ope
 python main.py -open welding2
 ```
 
+在 Windows PowerShell 中，可以让 `-open`、`-folder` 和 `-del` 后的项目名使用 Tab 自动补全。执行 `deploy.bat` 时会自动把补全脚本加入 PowerShell 的 `$PROFILE`，以后打开新 PowerShell 窗口即可使用。
+
+如果没有执行部署脚本，也可以手动加载一次：
+
+```powershell
+. .\lazyopen-completion.ps1
+```
+
+之后输入 `lazyopen -open <Tab>`、`lazyopen -folder <Tab>` 或 `lazyopen -del <Tab>` 即可补全 `lazylist.txt` 中的项目名。若希望每次打开 PowerShell 都生效，请将这行加入 `$PROFILE`。补全脚本适用于打包后的 `lazyopen.exe`；直接运行 `python main.py` 时请使用 `lazyopen.exe` 命令，或自行将脚本中的命令替换为 Python 启动命令。
+
 ### 3. 删除项目
 
 ```bash

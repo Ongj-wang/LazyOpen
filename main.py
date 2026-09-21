@@ -8,7 +8,7 @@ from pathlib import Path
 def get_app_dir():
     """返回脚本/EXE 所在目录，确保 lazylist.txt 与程序放在同一目录。"""
     if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent
+        return Path(sys.executable).resolve().parent.parent
     return Path(__file__).resolve().parent
 
 
@@ -242,6 +242,14 @@ def list_projects():
     print(f"共 {len(projects)} 个项目")
 
 
+def complete_projects(prefix):
+    """输出匹配的项目名，供终端补全器调用。"""
+    prefix = (prefix or "").lower()
+    for project in load_projects():
+        if project["name"].lower().startswith(prefix):
+            print(project["name"])
+
+
 def print_help():
     """打印帮助信息"""
     print("\n" + "=" * 50)
@@ -271,7 +279,10 @@ if __name__ == "__main__":
         sys.exit(0)
     action = sys.argv[1].lower()
 
-    if action == "-add":
+    if action == "-complete":
+        complete_projects(sys.argv[2] if len(sys.argv) > 2 else "")
+
+    elif action == "-add":
         # 解析参数
         name = None
         proj_dir = None
