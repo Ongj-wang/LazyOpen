@@ -77,6 +77,26 @@ python main.py -list
 python main.py
 ```
 
+### 6. 在文件资源管理器中打开项目目录（新）
+
+新增 `-folder` 命令：行为类似 `-open`，但用于在系统文件资源管理器中直接打开项目所在的文件夹。
+
+- 用法：
+
+```bash
+python main.py -folder <项目名> [open_method]
+```
+
+- 说明：
+  - 第二个参数是已保存的 `项目名`（从 `lazylist.txt` 查找项目路径）。
+  - 如果不指定 `open_method`（第三个参数），默认会在系统的文件资源管理器中打开该目录（Windows 使用资源管理器，mac 使用 `open`，Linux 使用 `xdg-open`）。
+  - 可以通过第三个参数指定 `vscode` 或 `qoder`，则会在对应编辑器中打开该目录。例如：
+
+```bash
+python main.py -folder welding          # 在文件资源管理器中打开 'welding' 项目的目录
+python main.py -folder welding vscode   # 在 VS Code 中打开该目录（等同于在编辑器中打开）
+```
+
 ## 说明
 
 - 如果使用 `vscode`，需要确保 `code` 命令可用，通常安装 VS Code 后会自动加入 PATH。

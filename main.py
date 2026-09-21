@@ -29,8 +29,9 @@ def find_executable(candidates):
     return None
 
 
-def build_open_command(method, project_dir):
-    """构造打开命令列表，兼容 VS Code / Qoder 的 Windows 启动方式。"""
+def build_open_command(method, project_dir, new_window=False):
+    """构造打开命令列表，兼容 VS Code / Qoder 的 Windows 启动方式。
+    如果 new_window=True，则尽可能传递打开新窗口的参数（例如 VS Code 的 `-n`）。"""
     if method == "qoder":
         executable = find_executable(
             [
@@ -71,6 +72,13 @@ def build_open_command(method, project_dir):
 
     if not executable:
         return None
+
+    # 对于不同编辑器/IDE，添加打开新窗口的参数
+    if method == "vscode":
+        if new_window:
+            return [executable, "-n", project_dir]
+        return [executable, project_dir]
+    # qoder 暂无统一的新窗口参数，直接传目录
     return [executable, project_dir]
 
 
@@ -127,7 +135,7 @@ def add_project(name, proj_dir, method):
     print(f"   打开方式: {method}")
 
 
-def open_project(name):
+def open_project(name, open_method=None):
     """打开项目"""
     if not name:
         print("❌ 错误: 请指定项目名称")
@@ -149,9 +157,9 @@ def open_project(name):
     if not target_dir.is_dir():
         print(f"❌ 错误: 项目目录不存在: {target['dir']}")
         return
-
+    if open_method:
+        target["method"] = open_method
     print(f"🚀 正在用 {target['method']} 打开项目 '{target['name']}'...")
-
     command = build_open_command(target["method"], str(target_dir))
     if not command:
         print(
@@ -160,16 +168,43 @@ def open_project(name):
         return
 
     try:
+        # Windows 上若是 .cmd/.bat，使用 shell=True 并把所有参数拼为一个命令行字符串
         if os.name == "nt" and os.path.splitext(command[0])[1].lower() in {
             ".cmd",
             ".bat",
         }:
-            subprocess.Popen(f'"{command[0]}" "{command[1]}"', shell=True)
+            cmdline = " ".join(f'"{p}"' for p in command)
+            subprocess.Popen(cmdline, shell=True)
         else:
             subprocess.Popen(command)
         print("✅ 已发送打开指令")
     except OSError as exc:
         print(f"❌ 错误: 启动 {target['method']} 失败: {exc}")
+
+
+def open_folder(folder_path):
+    """直接打开指定文件夹（非 lazylist 项目），可选择是否在新窗口打开。"""
+    if not folder_path:
+        print("❌ 错误: 请指定文件夹路径")
+        return
+
+    folder = Path(folder_path).expanduser()
+    if not folder.is_dir():
+        print(f"❌ 错误: 目录不存在: {folder_path}")
+        return
+
+    # 使用系统默认文件管理器打开
+    try:
+        if os.name == "nt":
+            os.startfile(str(folder))
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", str(folder)])
+        else:
+            subprocess.Popen(["xdg-open", str(folder)])
+        print(f"✅ 已在文件资源管理器中打开: {str(folder)}")
+    except OSError as exc:
+        print(f"❌ 错误: 无法使用文件管理器打开目录: {exc}")
+    return
 
 
 def del_project(name):
@@ -219,6 +254,9 @@ def print_help():
     )
     print("  python lazyopen.py -del <项目名>")
     print("  python lazyopen.py -list")
+    print(
+        "  python lazyopen.py -folder <项目名>  # 在文件资源管理器中打开（默认），或指定 vscode|qoder 在编辑器中打开"
+    )
     print("\n示例:")
     print(
         '  python lazyopen.py -add --name welding2 --dir "E:\\addon_dev\\jaka_welding_kit2" --open_method qoder'
@@ -231,7 +269,6 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print_help()
         sys.exit(0)
-    print(f"sys.argv: {sys.argv}")
     action = sys.argv[1].lower()
 
     if action == "-add":
@@ -257,7 +294,34 @@ if __name__ == "__main__":
 
     elif action == "-open":
         name = sys.argv[2] if len(sys.argv) > 2 else None
-        open_project(name)
+        open_method = sys.argv[3] if len(sys.argv) > 3 else None
+        open_project(name, open_method)
+
+    elif action == "-folder":
+        # 第二个参数为项目名，类似 -open 行为；可选第三个参数覆盖打开方式（vscode|qoder）
+        name = sys.argv[2] if len(sys.argv) > 2 else None
+        if not name:
+            print("❌ 错误: 请指定项目名称")
+            sys.exit(1)
+
+        projects = load_projects()
+        target = None
+        for p in projects:
+            if p["name"].lower() == name.lower():
+                target = p
+                break
+
+        if not target:
+            print(f"❌ 错误: 未找到项目 '{name}'")
+            list_projects()
+            sys.exit(1)
+
+        proj_dir = Path(target["dir"]).expanduser()
+        if not proj_dir.is_dir():
+            print(f"❌ 错误: 项目目录不存在: {target['dir']}")
+            sys.exit(1)
+
+        open_folder(str(proj_dir))
 
     elif action == "-del":
         name = sys.argv[2] if len(sys.argv) > 2 else None
@@ -265,7 +329,6 @@ if __name__ == "__main__":
 
     elif action == "-list":
         list_projects()
-
     else:
         print(f"❌ 未知命令: {action}")
         print_help()
