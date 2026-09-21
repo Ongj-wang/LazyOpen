@@ -119,6 +119,23 @@ build.bat
 
 打包后可直接运行生成的 `lazyopen.exe`。
 
+## 一键部署
+
+在项目根目录执行以下命令：
+
+```bash
+deploy.bat
+```
+
+部署脚本会依次完成以下操作：
+
+- 构建 `main.py` 并生成 `lazyopen.exe`
+- 将 EXE 复制到项目根目录
+- 删除 `build` 和 `dist` 构建目录
+- 将项目根目录加入当前用户的 `PATH` 环境变量
+
+PATH 更新后请重新打开终端，即可直接执行 `lazyopen` 命令。
+
 ## 示例
 
 ```bash
