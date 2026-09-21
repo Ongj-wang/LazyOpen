@@ -1,0 +1,16 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+lazyopen.exe
+lazyopen.spec
+
+# Virtual environments
+.venv
+
+# user configs
+lazylist.txt
