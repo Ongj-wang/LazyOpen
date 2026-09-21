@@ -5,7 +5,7 @@ set "PROJECT_DIR=%~dp0"
 pushd "%PROJECT_DIR%"
 
 echo [1/4] Building lazyopen.exe...
-uv run pyinstaller --onefile --name lazyopen --clean main.py
+uv run pyinstaller --onefile --name lazyopen --clean -i ./face.ico main.py
 if errorlevel 1 (
     echo Build failed.
     popd

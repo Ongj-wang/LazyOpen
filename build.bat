@@ -1,2 +1,2 @@
-uv run pyinstaller --onefile --name lazyopen --clean main.py
-copy dist/lazyopen.exe ./lazyopen.exe
+uv run pyinstaller --onefile --name lazyopen --clean -i ./face.ico main.py
+if exist "build" rmdir /s /q "build"
