@@ -17,7 +17,7 @@ LAZYLIST_FILE = APP_DIR / "lazylist.txt"
 
 
 def find_executable(candidates):
-    """查找可执行文件，兼容 Windows 下的 .cmd/.bat 包装器。"""
+    """查找可执行文件，兼容 Windows 下的 .cmd/.bat 包装器，以及 Linux/macOS 的编辑器入口。"""
     for candidate in candidates:
         if not candidate:
             continue
@@ -29,46 +29,84 @@ def find_executable(candidates):
     return None
 
 
-def build_open_command(method, project_dir, new_window=False):
-    """构造打开命令列表，兼容 VS Code / Qoder 的 Windows 启动方式。
-    如果 new_window=True，则尽可能传递打开新窗口的参数（例如 VS Code 的 `-n`）。"""
+def get_editor_candidates(method):
+    """返回各平台下的编辑器候选命令，兼容 VS Code、VS Code Insiders、Cursor、Qoder 等。"""
     if method == "qoder":
-        executable = find_executable(
-            [
-                "qoder",
-                "Qoder",
-                "Qoder IDE",
-                "Qoder IDE.exe",
-                "qoder.exe",
-            ]
-        )
-    else:
-        executable = find_executable(
-            [
-                "code",
+        return [
+            "qoder",
+            "Qoder",
+            "Qoder IDE",
+            "Qoder IDE.exe",
+            "qoder.exe",
+        ]
+
+    if os.name == "nt":
+        return [
+            "code",
+            "code-insiders",
+            "cursor",
+            "code.cmd",
+            "code.exe",
+            os.path.join(
+                os.environ.get("LOCALAPPDATA", ""),
+                "Programs",
+                "Microsoft VS Code",
+                "bin",
                 "code.cmd",
-                "code.exe",
-                os.path.join(
-                    os.environ.get("LOCALAPPDATA", ""),
-                    "Programs",
-                    "Microsoft VS Code",
-                    "bin",
-                    "code.cmd",
-                ),
-                os.path.join(
-                    os.environ.get("ProgramFiles", ""),
-                    "Microsoft VS Code",
-                    "bin",
-                    "code.cmd",
-                ),
-                os.path.join(
-                    os.environ.get("ProgramFiles(x86)", ""),
-                    "Microsoft VS Code",
-                    "bin",
-                    "code.cmd",
-                ),
-            ]
-        )
+            ),
+            os.path.join(
+                os.environ.get("ProgramFiles", ""),
+                "Microsoft VS Code",
+                "bin",
+                "code.cmd",
+            ),
+            os.path.join(
+                os.environ.get("ProgramFiles(x86)", ""),
+                "Microsoft VS Code",
+                "bin",
+                "code.cmd",
+            ),
+            os.path.join(
+                os.environ.get("LOCALAPPDATA", ""),
+                "Programs",
+                "Cursor",
+                "resources",
+                "app",
+                "bin",
+                "cursor.cmd",
+            ),
+        ]
+
+    if sys.platform == "darwin":
+        return [
+            "code",
+            "code-insiders",
+            "cursor",
+            "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code",
+            "/Applications/Visual Studio Code - Insiders.app/Contents/Resources/app/bin/code",
+            "/Applications/Cursor.app/Contents/MacOS/Cursor",
+        ]
+
+    return [
+        "code",
+        "code-insiders",
+        "cursor",
+        "cursor-insiders",
+        "codium",
+        "code-oss",
+        "/usr/bin/code",
+        "/usr/local/bin/code",
+        "/snap/bin/code",
+        "/usr/share/code/bin/code",
+        "/usr/bin/code-insiders",
+        "/usr/local/bin/code-insiders",
+    ]
+
+
+def build_open_command(method, project_dir, new_window=False):
+    """构造打开命令列表，兼容 VS Code / Qoder 的 Windows / Linux / macOS 启动方式。
+    如果 new_window=True，则尽可能传递打开新窗口的参数（例如 VS Code 的 `-n`）。"""
+    executable = find_executable(get_editor_candidates(method))
 
     if not executable:
         return None
@@ -182,8 +220,8 @@ def open_project(name, open_method=None):
         print(f"❌ 错误: 启动 {target['method']} 失败: {exc}")
 
 
-def open_folder(folder_path):
-    """直接打开指定文件夹（非 lazylist 项目），可选择是否在新窗口打开。"""
+def open_folder(folder_path, open_method=None):
+    """直接打开指定文件夹，支持在系统文件管理器或编辑器中打开。"""
     if not folder_path:
         print("❌ 错误: 请指定文件夹路径")
         return
@@ -191,6 +229,21 @@ def open_folder(folder_path):
     folder = Path(folder_path).expanduser()
     if not folder.is_dir():
         print(f"❌ 错误: 目录不存在: {folder_path}")
+        return
+
+    normalized_method = (open_method or "").lower()
+    if normalized_method in {"vscode", "qoder"}:
+        try:
+            command = build_open_command(normalized_method, str(folder))
+            if not command:
+                print(
+                    f"❌ 错误: 未在系统 PATH 中找到 '{normalized_method}' 命令，请确认已安装或已添加到环境变量"
+                )
+                return
+            subprocess.Popen(command)
+            print(f"✅ 已在 {normalized_method} 中打开: {str(folder)}")
+        except OSError as exc:
+            print(f"❌ 错误: 启动 {normalized_method} 失败: {exc}")
         return
 
     # 使用系统默认文件管理器打开
@@ -311,6 +364,7 @@ if __name__ == "__main__":
     elif action == "-folder":
         # 第二个参数为项目名，类似 -open 行为；可选第三个参数覆盖打开方式（vscode|qoder）
         name = sys.argv[2] if len(sys.argv) > 2 else None
+        open_method = sys.argv[3] if len(sys.argv) > 3 else None
         if not name:
             print("❌ 错误: 请指定项目名称")
             sys.exit(1)
@@ -332,7 +386,7 @@ if __name__ == "__main__":
             print(f"❌ 错误: 项目目录不存在: {target['dir']}")
             sys.exit(1)
 
-        open_folder(str(proj_dir))
+        open_folder(str(proj_dir), open_method)
 
     elif action == "-del":
         name = sys.argv[2] if len(sys.argv) > 2 else None

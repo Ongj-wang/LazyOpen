@@ -6,7 +6,8 @@ $completionScript = {
         return
     }
 
-    $listFile = Join-Path $PSScriptRoot "lazylist.txt"
+    $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\")).Path
+    $listFile = Join-Path $projectRoot "lazylist.txt"
     if (Test-Path $listFile) {
         Get-Content $listFile -ErrorAction SilentlyContinue |
             ForEach-Object {

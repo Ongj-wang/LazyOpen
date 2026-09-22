@@ -1,11 +1,12 @@
 # LazyOpen
 
-LazyOpen 是一个 Windows 上的项目快速打开工具。它可以把常用项目保存到一个列表中，并按你指定的方式快速打开：
+LazyOpen 是一个跨平台的项目快速打开工具。它可以把常用项目保存到一个列表中，并按你指定的方式快速打开：
 
-- VS Code
+- VS Code / VS Code Insiders / Cursor
 - Qoder
 
-项目会把 `lazylist.txt` 放在程序所在目录中，因此无论你是直接运行 Python 脚本还是打包成 EXE，配置文件都会保持在同一目录，便于管理和迁移。
+它同样适用于 Linux、macOS 和 Windows 环境。
+项目会把 `lazylist.txt` 放在仓库根目录中，所有平台共用同一个配置文件，便于管理和迁移。
 
 ## 功能特点
 
@@ -13,7 +14,7 @@ LazyOpen 是一个 Windows 上的项目快速打开工具。它可以把常用�
 - 按项目名快速打开
 - 支持不同打开方式：`vscode` / `qoder`
 - 配置文件跟程序目录绑定，打包成 EXE 后也可正常使用
-- 适合在 Windows 环境中快速切换开发目录
+- 适合在跨平台开发环境中快速切换开发目录
 
 ## 目录结构
 
@@ -22,9 +23,18 @@ LazyOpen/
 ├─ main.py
 ├─ lazylist.txt
 ├─ README.md
-├─ build.bat
-├─ lazyopen.exe   (打包后生成)
-└─ ...
+├─ deploy.bat
+├─ deploy.sh
+├─ linux/
+│  ├─ lazyopen
+│  └─ AutoRegistration/
+│     ├─ lazyopen-completion.bash
+│     └─ lazyopen-completion.zsh
+├─ windows/
+│  ├─ lazyopen.bat
+│  └─ AutoRegistration/
+│     └─ lazyopen-completion.ps1
+└─ tests/
 ```
 
 `lazylist.txt` 的格式如下：
@@ -64,10 +74,18 @@ python main.py -open welding2
 如果没有执行部署脚本，也可以手动加载一次：
 
 ```powershell
-. .\lazyopen-completion.ps1
+. .\windows\AutoRegistration\lazyopen-completion.ps1
 ```
 
-之后输入 `lazyopen -open <Tab>`、`lazyopen -folder <Tab>` 或 `lazyopen -del <Tab>` 即可补全 `lazylist.txt` 中的项目名。若希望每次打开 PowerShell 都生效，请将这行加入 `$PROFILE`。补全脚本适用于打包后的 `lazyopen.exe`；直接运行 `python main.py` 时请使用 `lazyopen.exe` 命令，或自行将脚本中的命令替换为 Python 启动命令。
+之后输入 `lazyopen -open <Tab>`、`lazyopen -folder <Tab>` 或 `lazyopen -del <Tab>` 即可补全 `lazylist.txt` 中的项目名。若希望每次打开 PowerShell 都生效，请将这行加入 `$PROFILE`。
+
+Linux / macOS 下可使用：
+
+```bash
+. ./linux/AutoRegistration/lazyopen-completion.bash
+# 或
+. ./linux/AutoRegistration/lazyopen-completion.zsh
+```
 
 ### 3. 删除项目
 
@@ -111,38 +129,52 @@ python main.py -folder welding vscode   # 在 VS Code 中打开该目录（等�
 
 - 如果使用 `vscode`，需要确保 `code` 命令可用，通常安装 VS Code 后会自动加入 PATH。
 - 如果使用 `qoder`，需要确保 Qoder 可执行程序已安装，并且命令可被系统识别。
-- `lazylist.txt` 会自动创建在脚本目录中；打包成 EXE 后，配置文件也会和 EXE 在同一目录。
+- `lazylist.txt` 会保存在项目根目录中，所有脚本共用同一个配置文件。
 
-## 打包成 EXE
+## 直接运行
 
-可以使用 PyInstaller 打包：
-
-```bash
-uv run pyinstaller --onefile --windowed --name lazyopen --clean main.py
-```
-
-或者直接使用：
+不需要打包成 EXE，直接用 Python 执行即可：
 
 ```bash
-build.bat
+python main.py -list
+python main.py -add --name projectA --dir "/path/to/projectA" --open_method vscode
+python main.py -open projectA
 ```
 
-打包后可直接运行生成的 `lazyopen.exe`。
+也可以直接使用平台包装脚本：
+
+```bash
+./linux/lazyopen -list
+./linux/lazyopen -open projectA
+```
+
+Windows 下可直接运行：
+
+```bat
+windows\lazyopen.bat -list
+windows\lazyopen.bat -open projectA
+```
 
 ## 一键部署
 
-在项目根目录执行以下命令：
+Windows：
 
 ```bash
 deploy.bat
 ```
 
+Linux / macOS：
+
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
 部署脚本会依次完成以下操作：
 
-- 构建 `main.py` 并生成 `lazyopen.exe`
-- 将 EXE 复制到项目根目录
-- 删除 `build` 和 `dist` 构建目录
-- 将项目根目录加入当前用户的 `PATH` 环境变量
+- 将对应平台的包装脚本加入当前用户的 `PATH`
+- 注册 Bash/Zsh 或 PowerShell 补全脚本
+- 让终端可以直接执行 `lazyopen` 命令
 
 PATH 更新后请重新打开终端，即可直接执行 `lazyopen` 命令。
 
