@@ -3,11 +3,10 @@ _lazyopen_complete() {
   _init_completion || return
 
   cur="${COMP_WORDS[COMP_CWORD]}"
-  prev="${COMP_WORDS[COMP_CWORD - 1]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
 
   case "$prev" in
     -open|-folder|-del)
-      local script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
       local list_file="${LAZYOPEN_LIST_FILE:-$(cd -- "$script_dir/.." && pwd)/lazylist.txt}"
       if [[ -f "$list_file" ]]; then
         local names=()
