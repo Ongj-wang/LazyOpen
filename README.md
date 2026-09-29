@@ -69,7 +69,7 @@ python main.py -add --name welding2 --dir "E:\addon_dev\jaka_welding_kit2" --ope
 python main.py -open welding2
 ```
 
-在 Windows PowerShell 中，可以让 `-open`、`-folder` 和 `-del` 后的项目名使用 Tab 自动补全。执行 `deploy.bat` 时会自动把补全脚本加入 PowerShell 的 `$PROFILE`，以后打开新 PowerShell 窗口即可使用。
+在 Windows PowerShell 中，可以让 `-open`、`-folder`、`-del` 和 `-terminal`（也支持 `-teminal`、`-t`）后的项目名使用 Tab 自动补全。执行 `deploy.bat` 时会自动把补全脚本加入 PowerShell 的 `$PROFILE`，以后打开新 PowerShell 窗口即可使用。
 
 如果没有执行部署脚本，也可以手动加载一次：
 
@@ -77,7 +77,7 @@ python main.py -open welding2
 . .\windows\AutoRegistration\lazyopen-completion.ps1
 ```
 
-之后输入 `lazyopen -open <Tab>`、`lazyopen -folder <Tab>` 或 `lazyopen -del <Tab>` 即可补全 `lazylist.txt` 中的项目名。若希望每次打开 PowerShell 都生效，请将这行加入 `$PROFILE`。
+之后输入 `lazyopen -open <Tab>`、`lazyopen -folder <Tab>`、`lazyopen -del <Tab>` 或 `lazyopen -t <Tab>` 即可补全 `lazylist.txt` 中的项目名。若希望每次打开 PowerShell 都生效，请将这行加入 `$PROFILE`。
 
 Linux / macOS 下可使用：
 
@@ -93,19 +93,29 @@ Linux / macOS 下可使用：
 python main.py -del welding2
 ```
 
-### 4. 查看项目列表
+### 4. 在终端中打开项目
+
+使用项目名在项目目录中打开一个新的终端窗口。Windows 启动 PowerShell，Linux 使用系统中可用的终端模拟器。
+
+```bash
+python main.py -terminal welding2
+python main.py -teminal welding2
+python main.py -t welding2
+```
+
+### 5. 查看项目列表
 
 ```bash
 python main.py -list
 ```
 
-### 5. 查看帮助
+### 6. 查看帮助
 
 ```bash
 python main.py
 ```
 
-### 6. 在文件资源管理器中打开项目目录（新）
+### 7. 在文件资源管理器中打开项目目录（新）
 
 新增 `-folder` 命令：行为类似 `-open`，但用于在系统文件资源管理器中直接打开项目所在的文件夹。
 

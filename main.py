@@ -1,4 +1,5 @@
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -120,6 +121,47 @@ def build_open_command(method, project_dir, new_window=False):
     return [executable, project_dir]
 
 
+def build_terminal_command(project_dir, platform=None):
+    """构造在指定目录启动新终端的命令。"""
+    platform = platform or sys.platform
+    if platform == "win32":
+        executable = find_executable(
+            ["powershell.exe", "powershell", "pwsh.exe", "pwsh"]
+        )
+        if not executable:
+            return None
+        escaped_dir = project_dir.replace("'", "''")
+        return [
+            executable,
+            "-NoExit",
+            "-Command",
+            f"Set-Location -LiteralPath '{escaped_dir}'",
+        ]
+
+    if platform.startswith("linux"):
+        terminal_options = [
+            ("gnome-terminal", [f"--working-directory={project_dir}"]),
+            ("konsole", ["--workdir", project_dir]),
+            ("xfce4-terminal", [f"--working-directory={project_dir}"]),
+            ("mate-terminal", [f"--working-directory={project_dir}"]),
+            ("tilix", [f"--working-directory={project_dir}"]),
+            ("lxterminal", [f"--working-directory={project_dir}"]),
+        ]
+        for terminal, arguments in terminal_options:
+            executable = find_executable([terminal])
+            if executable:
+                return [executable, *arguments]
+
+        executable = find_executable(["xterm"])
+        if executable:
+            shell_command = (
+                f'cd -- {shlex.quote(project_dir)} && exec "${{SHELL:-/bin/bash}}"'
+            )
+            return [executable, "-e", "bash", "-lc", shell_command]
+
+    return None
+
+
 def load_projects():
     """加载项目列表"""
     if not LAZYLIST_FILE.exists():
@@ -220,6 +262,52 @@ def open_project(name, open_method=None):
         print(f"❌ 错误: 启动 {target['method']} 失败: {exc}")
 
 
+def open_terminal(name):
+    """通过项目名在项目目录中启动新终端。"""
+    if not name:
+        print("❌ 错误: 请指定项目名称")
+        return
+
+    target = next(
+        (
+            project
+            for project in load_projects()
+            if project["name"].lower() == name.lower()
+        ),
+        None,
+    )
+    if not target:
+        print(f"❌ 错误: 未找到项目 '{name}'")
+        list_projects()
+        return
+
+    project_dir = Path(target["dir"]).expanduser()
+    if not project_dir.is_dir():
+        print(f"❌ 错误: 项目目录不存在: {target['dir']}")
+        return
+
+    command = build_terminal_command(str(project_dir))
+    if not command:
+        if sys.platform.startswith("linux"):
+            print(
+                "❌ 错误: 未找到支持的终端模拟器（gnome-terminal、konsole、xfce4-terminal 等）"
+            )
+        elif sys.platform == "win32":
+            print("❌ 错误: 未找到 PowerShell")
+        else:
+            print("❌ 错误: -terminal 目前支持 Windows 和 Linux")
+        return
+
+    try:
+        if sys.platform == "win32":
+            subprocess.Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)
+        else:
+            subprocess.Popen(command)
+        print(f"✅ 已在终端中打开项目: {target['name']}")
+    except OSError as exc:
+        print(f"❌ 错误: 启动终端失败: {exc}")
+
+
 def open_folder(folder_path, open_method=None):
     """直接打开指定文件夹，支持在系统文件管理器或编辑器中打开。"""
     if not folder_path:
@@ -241,7 +329,7 @@ def open_folder(folder_path, open_method=None):
                 )
                 return
             subprocess.Popen(command)
-            print(f"✅ 已在 {normalized_method} 中打开: {str(folder)}")
+            print(f"✅ 已在 {normalized_method} 中打开: {folder!s}")
         except OSError as exc:
             print(f"❌ 错误: 启动 {normalized_method} 失败: {exc}")
         return
@@ -254,7 +342,7 @@ def open_folder(folder_path, open_method=None):
             subprocess.Popen(["open", str(folder)])
         else:
             subprocess.Popen(["xdg-open", str(folder)])
-        print(f"✅ 已在文件资源管理器中打开: {str(folder)}")
+        print(f"✅ 已在文件资源管理器中打开: {folder!s}")
     except OSError as exc:
         print(f"❌ 错误: 无法使用文件管理器打开目录: {exc}")
     return
@@ -310,6 +398,7 @@ def print_help():
     print("=" * 50)
     print("\n用法:")
     print("  python lazyopen.py -open <项目名>")
+    print("  python lazyopen.py -terminal|-teminal|-t <项目名>")
     print(
         "  python lazyopen.py -add --name <名> --dir <路径> [--open_method vscode|qoder]"
     )
@@ -360,6 +449,10 @@ if __name__ == "__main__":
         name = sys.argv[2] if len(sys.argv) > 2 else None
         open_method = sys.argv[3] if len(sys.argv) > 3 else None
         open_project(name, open_method)
+
+    elif action in {"-terminal", "-teminal", "-t"}:
+        name = sys.argv[2] if len(sys.argv) > 2 else None
+        open_terminal(name)
 
     elif action == "-folder":
         # 第二个参数为项目名，类似 -open 行为；可选第三个参数覆盖打开方式（vscode|qoder）
