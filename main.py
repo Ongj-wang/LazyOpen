@@ -16,6 +16,11 @@ def get_app_dir():
 APP_DIR = get_app_dir()
 LAZYLIST_FILE = APP_DIR / "lazylist.txt"
 
+ACTION_ALIASES = {
+    "-o": "-open",
+    "-f": "-folder",
+}
+
 
 def find_executable(candidates):
     """查找可执行文件，兼容 Windows 下的 .cmd/.bat 包装器，以及 Linux/macOS 的编辑器入口。"""
@@ -397,7 +402,7 @@ def print_help():
     print(" LazyOpen - 快速打开项目工具 (Python版)")
     print("=" * 50)
     print("\n用法:")
-    print("  python lazyopen.py -open <项目名>")
+    print("  python lazyopen.py -open|-o <项目名>")
     print("  python lazyopen.py -terminal|-teminal|-t <项目名>")
     print(
         "  python lazyopen.py -add --name <名> --dir <路径> [--open_method vscode|qoder]"
@@ -405,7 +410,7 @@ def print_help():
     print("  python lazyopen.py -del <项目名>")
     print("  python lazyopen.py -list")
     print(
-        "  python lazyopen.py -folder <项目名>  # 在文件资源管理器中打开（默认），或指定 vscode|qoder 在编辑器中打开"
+        "  python lazyopen.py -folder|-f <项目名>  # 在文件资源管理器中打开（默认），或指定 vscode|qoder 在编辑器中打开"
     )
     print("\n示例:")
     print(
@@ -419,7 +424,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print_help()
         sys.exit(0)
-    action = sys.argv[1].lower()
+    action = ACTION_ALIASES.get(sys.argv[1].lower(), sys.argv[1].lower())
 
     if action == "-complete":
         complete_projects(sys.argv[2] if len(sys.argv) > 2 else "")

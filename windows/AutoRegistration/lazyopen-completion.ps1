@@ -4,7 +4,7 @@ $completionScript = {
     param($wordToComplete, $commandAst, $cursorPosition)
 
     $commandText = $commandAst.Extent.Text
-    if ($commandText -notmatch "(?i)(^|\s)-(open|folder|del|terminal|teminal|t)(\s|$)") {
+    if ($commandText -notmatch "(?i)(^|\s)-(open|o|folder|f|del|terminal|teminal|t)(\s|$)") {
         return
     }
 

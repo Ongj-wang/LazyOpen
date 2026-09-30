@@ -5,7 +5,7 @@ _lazyopen_complete() {
   local script_dir="${${(%):-%N}:h}"
   local list_file="${LAZYOPEN_LIST_FILE:-$(cd -- "$script_dir/.." && pwd)/lazylist.txt}"
 
-  if [[ "$words[CURRENT-1]" == "-open" || "$words[CURRENT-1]" == "-folder" || "$words[CURRENT-1]" == "-del" || "$words[CURRENT-1]" == "-terminal" || "$words[CURRENT-1]" == "-teminal" || "$words[CURRENT-1]" == "-t" ]]; then
+  if [[ "$words[CURRENT-1]" == "-open" || "$words[CURRENT-1]" == "-o" || "$words[CURRENT-1]" == "-folder" || "$words[CURRENT-1]" == "-f" || "$words[CURRENT-1]" == "-del" || "$words[CURRENT-1]" == "-terminal" || "$words[CURRENT-1]" == "-teminal" || "$words[CURRENT-1]" == "-t" ]]; then
     if [[ -f "$list_file" ]]; then
       while IFS='|' read -r name _; do
         if [[ -n "$name" ]]; then
@@ -15,7 +15,7 @@ _lazyopen_complete() {
     fi
     compadd -a names
   else
-    compadd -a - "-open" "-folder" "-del" "-terminal" "-teminal" "-t" "-list" "-add"
+    compadd -a - "-open" "-o" "-folder" "-f" "-del" "-terminal" "-teminal" "-t" "-list" "-add"
   fi
 }
 

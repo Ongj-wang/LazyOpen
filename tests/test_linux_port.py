@@ -1,4 +1,9 @@
-from main import build_open_command
+from main import ACTION_ALIASES, build_open_command
+
+
+def test_action_aliases_include_short_forms():
+    assert ACTION_ALIASES["-o"] == "-open"
+    assert ACTION_ALIASES["-f"] == "-folder"
 
 
 def test_build_open_command_accepts_linux_vscode_aliases(monkeypatch):
